@@ -11,13 +11,13 @@
 #include <io.h>
 #include <fcntl.h>
 
-#define UTIL_NAME	L"SignalAnyEvent"
+#define UTIL_NAME    L"SignalAnyEvent"
 
 void ShowHelp()
 {
     fwprintf(stdout,
-		UTIL_NAME L" utility can set/pulse/reset event object by name or by handle value (for unnamed events)\n"
-		L"https://github.com/Stanislav-Povolotsky/SignalAnyEvent" "\n"
+        UTIL_NAME L" utility can set/pulse/reset event object by name or by handle value (for unnamed events)\n"
+        L"https://github.com/Stanislav-Povolotsky/SignalAnyEvent" "\n"
         L"\n"
         L"Format: " UTIL_NAME " /n <event-name> [/global|/local] [/pulse] [/reset]\n"
         L"Format: " UTIL_NAME " /p <pid> /h <handle-value> [/pulse] [/reset]\n"
@@ -26,8 +26,8 @@ void ShowHelp()
         L"Example: " UTIL_NAME " /n MyEvent\n"
         L"Example: " UTIL_NAME " /p 234 /h 0x290 /pulse\n"
         L"Example: " UTIL_NAME " /pn svchost.exe /h 1344\n"
-		L"\n");
-	exit(1);
+        L"\n");
+    exit(1);
 }
 
 enum class EWorkMode
@@ -107,7 +107,7 @@ bool SUtilOptions::Parse(int argc, wchar_t** argv)
         }
         else
         {
-			fwprintf(stderr, L"Unsupported option '%s'\n", pn);
+            fwprintf(stderr, L"Unsupported option '%s'\n", pn);
             return false;
         }
     }
@@ -278,68 +278,68 @@ DWORD SignalAnyEvent(SUtilOptions& options)
             break;
         }
         break;
-	default:
-		sFailType = L"Unsupported mode";
-		dwError = ERROR_CALL_NOT_IMPLEMENTED;
-	}
+    default:
+        sFailType = L"Unsupported mode";
+        dwError = ERROR_CALL_NOT_IMPLEMENTED;
+    }
 
-	if (!dwError)
-	{
-		if (dwPID)
-		{
-			CHandle hProcess;
-			EnableDebugPrivileges();
-			hProcess.Attach(::OpenProcess(PROCESS_DUP_HANDLE, FALSE, dwPID));
-			if (!hProcess) {
-				dwError = ::GetLastError();
-				sFailType = L"Unable to open process";
-			}
-			else
-			{
-				_Analysis_assume_(dwHandleValue != 0);
-				if (!::DuplicateHandle(hProcess, (HANDLE)(ULONG_PTR)dwHandleValue, ::GetCurrentProcess(), &hEvt.m_h, EVENT_MODIFY_STATE, FALSE, 0)) {
-					dwError = ::GetLastError();
-					sFailType = L"Unable to open event (handle duplication fail)";
-				}
-			}
-		}
-	}
+    if (!dwError)
+    {
+        if (dwPID)
+        {
+            CHandle hProcess;
+            EnableDebugPrivileges();
+            hProcess.Attach(::OpenProcess(PROCESS_DUP_HANDLE, FALSE, dwPID));
+            if (!hProcess) {
+                dwError = ::GetLastError();
+                sFailType = L"Unable to open process";
+            }
+            else
+            {
+                _Analysis_assume_(dwHandleValue != 0);
+                if (!::DuplicateHandle(hProcess, (HANDLE)(ULONG_PTR)dwHandleValue, ::GetCurrentProcess(), &hEvt.m_h, EVENT_MODIFY_STATE, FALSE, 0)) {
+                    dwError = ::GetLastError();
+                    sFailType = L"Unable to open event (handle duplication fail)";
+                }
+            }
+        }
+    }
 
-	if (dwError)
-	{
-		if (hEvt)
-		{
-			BOOL bRes = FALSE;
-			if (!options.bOptReset)
-			{
-				bRes = options.bOptPulse ? ::PulseEvent(hEvt) : ::SetEvent(hEvt);;
-			}
-			else
-			{
-				if (!options.bOptPulse)
-				{
-					bRes = ::ResetEvent(hEvt);
-				}
-				else
-				{
-					// Reset-than-set pulsation
-					bRes = ::ResetEvent(hEvt);
-					if (bRes) {
-						bRes = ::SetEvent(hEvt);
-					}
-				}
-			}
-			if (!bRes) {
-				dwError = ::GetLastError();
-				sFailType = L"Unable to modify event state";
-			}
-		}
-	}
+    if (!dwError)
+    {
+        if (hEvt)
+        {
+            BOOL bRes = FALSE;
+            if (!options.bOptReset)
+            {
+                bRes = options.bOptPulse ? ::PulseEvent(hEvt) : ::SetEvent(hEvt);;
+            }
+            else
+            {
+                if (!options.bOptPulse)
+                {
+                    bRes = ::ResetEvent(hEvt);
+                }
+                else
+                {
+                    // Reset-than-set pulsation
+                    bRes = ::ResetEvent(hEvt);
+                    if (bRes) {
+                        bRes = ::SetEvent(hEvt);
+                    }
+                }
+            }
+            if (!bRes) {
+                dwError = ::GetLastError();
+                sFailType = L"Unable to modify event state";
+            }
+        }
+    }
 
     if (dwError)
     {
-		fwprintf(stderr, L"%s. Error: %u %s\n", sFailType, dwError, 
-			GetErrorCodeDescription(dwError, buff, _countof(buff)));
+        fwprintf(stderr, L"%s. Error: %u %s\n", sFailType, dwError, 
+            GetErrorCodeDescription(dwError, buff, _countof(buff)));
         return dwError;
     }
 
@@ -348,15 +348,15 @@ DWORD SignalAnyEvent(SUtilOptions& options)
 
 void PrepareConsole()
 {
-	int error_code = 0;
-	if (_setmode(_fileno(stderr), _O_U16TEXT) == -1 ||
-		_setmode(_fileno(stdout), _O_U16TEXT) == -1)
-	{
-		error_code = errno;
-	}
-	if (error_code) {
-		fprintf(stderr, "Warning: console is not ready to be used with unicode\n");
-	}
+    int error_code = 0;
+    if (_setmode(_fileno(stderr), _O_U16TEXT) == -1 ||
+        _setmode(_fileno(stdout), _O_U16TEXT) == -1)
+    {
+        error_code = errno;
+    }
+    if (error_code) {
+        fprintf(stderr, "Warning: console is not ready to be used with unicode\n");
+    }
 }
 
 int wmain(int argc, wchar_t** argv)
@@ -365,7 +365,7 @@ int wmain(int argc, wchar_t** argv)
     SUtilOptions options;
     
     PrepareConsole();
-	if (argc <= 1) {
+    if (argc <= 1) {
         ShowHelp();
     }
     if (!options.Parse(argc - 1, argv + 1)) {
@@ -374,7 +374,7 @@ int wmain(int argc, wchar_t** argv)
 
     dwError = SignalAnyEvent(options);
     if (dwError == NO_ERROR) {
-		wprintf(L"Done.\n");
+        wprintf(L"Done.\n");
     }
 
     return static_cast<int>(dwError);
